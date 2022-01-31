@@ -25,9 +25,9 @@ const apiConfig = new Configuration({
 const key =
   "edf9aee84d9b7abc145504dde6726c64f369d37ee34ded868fabd876c26570bc01";
 const senderKey = createStacksPrivateKey(key);
-console.log('sender key: ' + JSON.stringify(senderKey));
+console.log("sender key: " + JSON.stringify(senderKey));
 
-const recipient = 'ST1T4P94X6YSSXBWBQ8HBVAGZSGNF1GFRRXCN45DB';
+const recipient = "ST1T4P94X6YSSXBWBQ8HBVAGZSGNF1GFRRXCN45DB";
 
 // amount of Stacks (STX) tokens to send (in micro-STX). 1,000,000 micro-STX are worth 1 Stacks (STX) token
 const amount = new BN(1000000);
@@ -42,7 +42,7 @@ const nonce = new BN(0);
 // for mainnet, use `StacksMainnet()`
 const network = new StacksTestnet();
 
-const memo = 'hello world';
+const memo = "hello world";
 
 const txOptions = {
   recipient,
@@ -54,44 +54,28 @@ const txOptions = {
   memo,
 };
 
-// --- changed from original Hiro example code: wrapped in async function to satisfy Node requirement
-async function doTransfer(){
-    const transaction = await makeSTXTokenTransfer(txOptions);
-    return transaction;
-}
-const transaction = doTransfer();
-
+// JS- moved this before the functions since it's just another constant definition
 const senderAddress = "SJ2FYQ8Z7JY9BWYZ5WM53SKR6CK7WHJF0691NZ942";
 
-// --- This failed, said unable to get Nonce.  Is the wallet address from this example code still valid?
-// const senderNonce = getNonce(senderAddress);
-
-const serializedTx = transaction.serialize().toString("hex");
-
-// --- changed from original Hiro example code: wrapped in async function to satisfy Node requirement
-async function doBroadcast(){
-    const broadcastResponse = await broadcastTransaction(transaction, network);
-    return broadcastResponse;
-}
-var broadcastResponse = doBroadcast();
-
-// --- added this line to view the response
-console.log('\nbroadcasat response:\n' + broadcastResponse);
-
-const txID = broadcastResponse.txid;
-
-const transactions = new TransactionsApi(apiConfig);
-
-// --- changed from original Hiro example code: wrapped in async function to satisfy Node requirement
-async function doTransaction(){
-    var txId = '';
-    const txInfo = await transactions.getTransactionById({
-        txId,
-      });
-    return txInfo;
+// JS- reorganized the code below into a single async function, which is called after the function is defined
+async function doStxTransfer() {
+  const transaction = await makeSTXTokenTransfer(txOptions);
+  // JS- had to add network to the call before or it will use mainnet by default
+  // currently fails because senderAddress is invalid - works with recipient though
+  const senderNonce = await getNonce(senderAddress, network);
+  console.log(`transaction: ${transaction}`);
+  console.log(`senderNonce: ${senderNonce}`);
+  const serializedTx = transaction.serialize().toString("hex");
+  console.log(`serializedTx: ${serializedTx}`);
+  const broadcastResponse = await broadcastTransaction(transaction, network);
+  console.log(`broadcastResponse: ${broadcastResponse}`);
+  const txID = broadcastResponse.txid;
+  console.log(`txID: ${txID}`);
+  const transactions = new TransactionsApi(apiConfig);
+  const txInfo = await transactions.getTransactionById({
+    txID,
+  });
+  console.log(`txInfo: ${txInfo}`);
 }
 
-// --- added this line to see the transaction response
-doTransaction().then(function(result){
-    console.log(result);
-});
+doStxTransfer();
